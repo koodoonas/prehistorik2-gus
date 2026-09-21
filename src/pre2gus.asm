@@ -7,8 +7,8 @@
 ; The launcher leaves PRE2.EXE unchanged.  It identifies the materialized game
 ; code in memory, replaces three exact entry sequences, and restores every
 ; interrupt vector when the child exits.  Music and SFX are played directly by
-; the GF1; the GUS MAX CS4231 codec is never addressed.  The analog line input
-; remains open for the protected intro and is muted at the game handoff.
+; the GF1; the GUS MAX CS4231 codec is never addressed.  By default, the analog
+; line input remains enabled after GF1 setup.  /LOFF mutes it at game handoff.
 ;
 ; Build with NASM 2.x: nasm -f bin -o PRE2GUS.COM pre2gus.asm
 
@@ -50,6 +50,8 @@ start:
     call parse_command_line
     jc fatal_args
     call show_music_pan
+    call show_audio_volumes
+    call show_line_mode
     call parse_ultrasnd
     jc fatal_config
     call setup_gus_ports
@@ -296,13 +298,21 @@ write_code_dump:
 %endif
 
 ; The PSP tail belongs to the launcher, not to PRE2.EXE.  Parse switches in
-; either order, and reject typos before touching the GF1.  OCP's -vp spelling
-; is accepted as an alias; negative percentages reverse L/R music channels.
+; any order, and reject typos before touching the GF1.  OCP-style -vp, -vm,
+; and -vs spellings are accepted; negative panning reverses L/R channels.
 parse_command_line:
     mov byte [test_mode], 0
     mov byte [pan_percent], 60    ; v1.1's fixed GF1 positions were 3/12
     mov byte [pan_reverse], 0
     mov byte [pan_seen], 0
+    mov byte [music_percent], 81  ; exact legacy master is 52/64
+    mov byte [sfx_percent], 86    ; exact legacy master is 55/64
+    mov byte [music_master], 52
+    mov byte [sfx_master], 55
+    mov byte [music_seen], 0
+    mov byte [sfx_seen], 0
+    mov byte [line_mute], 0
+    mov byte [line_seen], 0
     xor cx, cx
     mov cl, [80h]
     mov si, 81h
@@ -342,6 +352,12 @@ parse_command_line:
     je .test
     cmp al, 'P'
     je .pan
+    cmp al, 'M'
+    je .music
+    cmp al, 'S'
+    je .sfx
+    cmp al, 'L'
+    je .line
     jmp .fail
 .test:
     or bh, bh
@@ -354,7 +370,9 @@ parse_command_line:
     cmp byte [pan_seen], 0
     jne .fail
     mov byte [pan_seen], 1
-    jcxz .fail
+    mov byte [option_kind], 0
+    or cx, cx
+    jz .fail
     mov al, [si]
     cmp al, '='
     je .separator
@@ -363,7 +381,8 @@ parse_command_line:
 .separator:
     inc si
     dec cx
-    jcxz .fail
+    or cx, cx
+    jz .fail
 .sign:
     mov al, [si]
     cmp al, '-'
@@ -376,7 +395,8 @@ parse_command_line:
 .skip_sign:
     inc si
     dec cx
-    jcxz .fail
+    or cx, cx
+    jz .fail
 .first_digit:
     mov di, si
     xor bx, bx
@@ -403,7 +423,89 @@ parse_command_line:
 .number_done:
     cmp si, di
     je .fail
+    cmp byte [option_kind], 0
+    jne .volume_value
     mov [pan_percent], bl
+    jmp .token_end
+.music:
+    cmp byte [music_seen], 0
+    jne .fail
+    mov byte [music_seen], 1
+    mov byte [option_kind], 1
+    jmp .unsigned_value
+.sfx:
+    cmp byte [sfx_seen], 0
+    jne .fail
+    mov byte [sfx_seen], 1
+    mov byte [option_kind], 2
+.unsigned_value:
+    or cx, cx
+    jz .fail
+    mov al, [si]
+    cmp al, '='
+    je .unsigned_separator
+    cmp al, ':'
+    jne .unsigned_plus
+.unsigned_separator:
+    inc si
+    dec cx
+    or cx, cx
+    jz .fail
+.unsigned_plus:
+    cmp byte [si], '+'
+    jne .first_digit
+    inc si
+    dec cx
+    or cx, cx
+    jz .fail
+.volume_value:
+    mov al, bl
+    call percent_to_master
+    cmp byte [option_kind], 1
+    jne .store_sfx
+    mov [music_percent], bl
+    mov [music_master], al
+    jmp .token_end
+.store_sfx:
+    mov [sfx_percent], bl
+    mov [sfx_master], al
+    jmp .token_end
+.line:
+    or bh, bh
+    jnz .fail
+    cmp byte [line_seen], 0
+    jne .fail
+    mov byte [line_seen], 1
+    cmp cx, 2
+    jb .fail
+    mov al, [si]
+    and al, 0DFh
+    cmp al, 'O'
+    jne .fail
+    inc si
+    dec cx
+    mov al, [si]
+    and al, 0DFh
+    cmp al, 'N'
+    je .line_on
+    cmp al, 'F'
+    jne .fail
+    inc si
+    dec cx
+    or cx, cx
+    jz .fail
+    mov al, [si]
+    and al, 0DFh
+    cmp al, 'F'
+    jne .fail
+    inc si
+    dec cx
+    mov byte [line_mute], 1
+    jmp .token_end
+.line_on:
+    inc si
+    dec cx
+    mov byte [line_mute], 0
 .token_end:
     jcxz .success
     mov al, [si]
@@ -418,6 +520,18 @@ parse_command_line:
     ret
 .fail:
     stc
+    ret
+
+; AL = percentage 0..100.  Return AL = rounded 0..64 master scalar.
+percent_to_master:
+    push bx
+    xor ah, ah
+    mov bl, 64
+    mul bl
+    add ax, 50
+    mov bl, 100
+    div bl
+    pop bx
     ret
 
 ; Map a signed 0..100 percent width to GF1's discrete 0..15 pan register.
@@ -468,7 +582,36 @@ show_music_pan:
     call print_dos
     ret
 
+show_audio_volumes:
+    mov dx, msg_music_volume
+    call print_dos
+    mov al, [music_percent]
+    call print_decimal_byte
+    mov dx, msg_volume_percent
+    call print_dos
+    mov dx, msg_sfx_volume
+    call print_dos
+    mov al, [sfx_percent]
+    call print_decimal_byte
+    mov dx, msg_volume_percent
+    call print_dos
+    ret
+
+show_line_mode:
+    cmp byte [line_mute], 0
+    jne .muted
+    mov dx, msg_line_on
+    call print_dos
+    ret
+.muted:
+    mov dx, msg_line_off
+    call print_dos
+    ret
+
 print_decimal_byte:
+    push bx
+    push cx
+    push dx
     xor ah, ah
     mov bl, 10
     div bl
@@ -477,6 +620,7 @@ print_decimal_byte:
     mov dl, 10
     div dl
     mov bh, ah                   ; tens digit
+    mov ch, al                   ; hundreds digit
     or al, al
     jz .tens
     add al, '0'
@@ -484,10 +628,11 @@ print_decimal_byte:
     mov ah, 02h
     int 21h
 .tens:
+    cmp ch, 0
+    jne .print_tens
     cmp bh, 0
     jne .print_tens
-    cmp byte [pan_percent], 100
-    jne .ones
+    jmp .ones
 .print_tens:
     mov dl, bh
     add dl, '0'
@@ -498,6 +643,9 @@ print_decimal_byte:
     add dl, '0'
     mov ah, 02h
     int 21h
+    pop dx
+    pop cx
+    pop bx
     ret
 
 exec_game:
@@ -1259,10 +1407,13 @@ cleanup:
     mov byte [music_active], 0
     call gus_quiet
     call restore_vectors
-    ; Return the SB16-to-GUS analog pass-through to its launcher-time state.
+    cmp byte [game_line_muted], 1
+    jne .done
     mov dx, [gus_base]
     mov al, 08h
     out dx, al
+    mov byte [game_line_muted], 0
+.done:
     ret
 
 ; Called before the previous DOS INT 21 handler.  PRE2's loader reaches DOS
@@ -1372,15 +1523,18 @@ int21_handler:
     mov byte [es:PATCH_INIT_OFF], 0E9h
     mov word [es:PATCH_INIT_OFF+1], 0038h
     mov [patch_segment], ax
-    ; The protected HybriD intro has handed off.  Mute the analog line input
-    ; now so Prehistorik 2 proper is heard from the GF1 alone.
+    ; The mixer-control port is write-only, so the pre-launch line state cannot
+    ; be sampled.  GF1 setup established line-in enabled (08h).  Keep that state
+    ; by default; /LOFF requests the legacy 09h state only during the game.
+    cmp byte [line_mute], 0
+    je .line_ready
     cmp byte [game_line_muted], 1
-    je .line_done
+    je .line_ready
     mov dx, [gus_base]
     mov al, 09h
     out dx, al
     mov byte [game_line_muted], 1
-.line_done:
+.line_ready:
     mov byte [patch_installed], 1
     jmp .chain
 .candidate_fail:
@@ -2377,7 +2531,11 @@ play_requested_sfx:
     and bl, 1
     add bl, 7
     mov [voice_pan], bl
-    mov ax, [volume_table+55*2]
+    xor ax, ax
+    mov al, [sfx_master]
+    shl ax, 1
+    mov bx, ax
+    mov ax, [volume_table+bx]
     mov [voice_volume], ax
     call gf1_start_voice
     inc word [sfx_played]
@@ -2387,10 +2545,17 @@ play_requested_sfx:
 ; ---------------------------------------------------------------------------
 ; Data
 
-msg_banner       db 13,10,'PRE2GUS 1.3 - native Gravis UltraSound GF1 audio',13,10,'$'
-msg_bad_args     db 'Usage: PRE2GUS [/T] [/P-100..100]  (or -vp-100..100)',13,10,'$'
+msg_banner       db 13,10,'PRE2GUS 1.4 - native Gravis UltraSound GF1 audio',13,10,'$'
+msg_bad_args     db 'Usage: PRE2GUS [/T] [/P-100..100] [/M0..100] [/S0..100]',13,10
+                 db '               [/LON|/LOFF]',13,10
+                 db '       OCP aliases: -vp, -vm, -vs',13,10,'$'
 msg_pan          db 'GF1 music stereo width: $'
 msg_pan_end      db '%',13,10,'$'
+msg_music_volume db 'GF1 music volume: $'
+msg_sfx_volume   db 'GF1 SFX volume: $'
+msg_volume_percent db '%',13,10,'$'
+msg_line_on      db 'GF1 line input during game: enabled',13,10,'$'
+msg_line_off     db 'GF1 line input during game: muted after intro',13,10,'$'
 msg_bad_config   db 'ERROR: ULTRASND must contain a supported base,DMA,DMA,IRQ,IRQ setting.',13,10,'$'
 msg_no_memory    db 'ERROR: DOS could not resize the launcher memory block.',13,10,'$'
 msg_no_gus       db 'ERROR: no writable GF1 DRAM found at the ULTRASND base port.',13,10,'$'
@@ -2484,6 +2649,13 @@ old_pic_slave     db 0
 pan_percent       db 60
 pan_reverse       db 0
 pan_seen          db 0
+music_percent     db 81
+sfx_percent       db 86
+music_seen        db 0
+sfx_seen          db 0
+option_kind       db 0
+line_mute         db 0
+line_seen         db 0
 irq_vector        db 0
 vectors_installed db 0
 timer_started     db 0
@@ -2508,6 +2680,7 @@ requested_song    db 0
 requested_sfx     db 0
 sfx_round_robin   db 0
 music_master      db 52
+sfx_master        db 55
 
 old_int21         dd 0
 old_int65         dd 0

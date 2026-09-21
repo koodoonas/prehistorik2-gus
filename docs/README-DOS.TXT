@@ -1,4 +1,4 @@
-PRE2GUS 1.3 - NATIVE GRAVIS ULTRASOUND AUDIO FOR PREHISTORIK 2
+PRE2GUS 1.4 - NATIVE GRAVIS ULTRASOUND AUDIO FOR PREHISTORIK 2
 ================================================================
 
 This package contains no files from the original game. You must have a
@@ -25,20 +25,28 @@ INSTALL.COM converts the original compressed audio locally. It creates twelve
 .MOD files and PRE2SFX.RAW, using about 525 KB. It does not modify PRE2.EXE.
 Python, Windows, NASM, and a DOS extender are not required.
 
-MUSIC PANNING
--------------
+AUDIO CONTROLS
+--------------
 
 RUN_GUS.BAT uses /P60. You can run PRE2GUS directly with /P-100 through /P100,
 or with the OCP-style spelling -vp-100 through -vp100. /P0 centers the music,
 /P100 gives full separation, and a negative value reverses left and right.
 
+Use /M0 through /M100 for music volume and /S0 through /S100 for sound-effect
+volume. OCP-style -vm and -vs spellings are also accepted. If these options are
+omitted, PRE2GUS uses the earlier releases' exact volume levels (shown as 81%
+music and 86% SFX).
+
+Line input stays enabled during the game by default. /LON selects this
+explicitly. /LOFF keeps line input enabled for the intro, mutes it when the
+game takes over, and enables it again on exit.
+
 COMPATIBILITY
 -------------
 
-The launcher was reported working on a physical AMD 386DX-40 with a 1 MB GUS
-MAX. The native installer and all of its generated files were verified under a
-DOSBox-X 386 CPU profile. Native installation on physical hardware is still to
-be confirmed.
+Release 1.3 was reported working on a physical AMD 386DX-40 with a 1 MB GUS
+MAX. Version 1.4's new controls and GF1 self-test were verified under a
+DOSBox-X 386 CPU profile; physical 1.4 confirmation is still pending.
 
 LEGAL
 -----

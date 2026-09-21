@@ -871,7 +871,7 @@ decode_huffman_rle:
 ; ---------------------------------------------------------------------------
 ; Tables and state
 
-msg_banner      db 13,10,'PRE2GUS 1.3 native DOS installer',13,10
+msg_banner      db 13,10,'PRE2GUS 1.4 native DOS installer',13,10
                 db 'Converts original game audio locally; no game data is included.',13,10,'$'
 msg_overwrite   db 'Converted PRE2GUS audio already exists. Replace it? [Y/N] $'
 msg_converting  db 'Converting $'

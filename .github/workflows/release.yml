@@ -1,4 +1,4 @@
-name: Publish 1.3 release
+name: Publish 1.4 release
 
 on:
   workflow_run:
@@ -26,7 +26,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view v1.3 >/dev/null 2>&1; then
+          if gh release view v1.4 >/dev/null 2>&1; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
@@ -40,27 +40,27 @@ jobs:
           cp dos/RUN_GUS.BAT release/
           cp dos/TEST_GUS.BAT release/
           cp docs/README-DOS.TXT release/README.TXT
-          cp docs/CHECKSUMS-1.3.TXT release/SHA256.TXT
+          cp docs/CHECKSUMS-1.4.TXT release/SHA256.TXT
           cp LICENSE release/LICENSE.TXT
           sed -i 's/$/\r/' release/README.TXT release/SHA256.TXT release/LICENSE.TXT
-          (cd release && zip -9 -X ../PRE2GUS-1.3-DOS.zip \
+          (cd release && zip -9 -X ../PRE2GUS-1.4-DOS.zip \
             INSTALL.COM PRE2GUS.COM RUN_GUS.BAT TEST_GUS.BAT \
             README.TXT SHA256.TXT LICENSE.TXT)
-          git archive --format=zip --prefix=PRE2GUS-1.3/ \
-            -o PRE2GUS-1.3-source.zip HEAD
-          sha256sum PRE2GUS-1.3-DOS.zip PRE2GUS-1.3-source.zip \
-            > PRE2GUS-1.3-SHA256SUMS.txt
+          git archive --format=zip --prefix=PRE2GUS-1.4/ \
+            -o PRE2GUS-1.4-source.zip HEAD
+          sha256sum PRE2GUS-1.4-DOS.zip PRE2GUS-1.4-source.zip \
+            > PRE2GUS-1.4-SHA256SUMS.txt
       - name: Publish release
         if: steps.release.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create v1.3 \
-            PRE2GUS-1.3-DOS.zip \
-            PRE2GUS-1.3-source.zip \
-            PRE2GUS-1.3-SHA256SUMS.txt \
+          gh release create v1.4 \
+            PRE2GUS-1.4-DOS.zip \
+            PRE2GUS-1.4-source.zip \
+            PRE2GUS-1.4-SHA256SUMS.txt \
             dist/INSTALL.COM \
             dist/PRE2GUS.COM \
             --target "${{ github.event.workflow_run.head_sha }}" \
-            --title "PRE2GUS 1.3" \
-            --notes-file docs/RELEASE_NOTES-1.3.md
+            --title "PRE2GUS 1.4" \
+            --notes-file docs/RELEASE_NOTES-1.4.md

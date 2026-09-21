@@ -43,3 +43,6 @@ directory.
 
 On the DOS system, run `TEST_GUS.BAT` first and listen for both music and a
 digital effect. Then use `RUN_GUS.BAT`, which selects 60% music stereo width.
+
+`PRE2GUS /M0..100 /S0..100` selects music and SFX volume. Line input stays
+enabled by default; use `/LOFF` only when it should be muted after the intro.

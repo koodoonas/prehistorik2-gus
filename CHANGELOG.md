@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.4
+
+- Kept the GF1 analog line input enabled at game handoff by default.
+- Added `/LON` and `/LOFF` to select the line-input state during the game.
+- Added independent `/M0..100` and `/S0..100` music and SFX volume controls,
+  with OCP-style `-vm` and `-vs` aliases.
+- Preserved the exact earlier music and SFX master levels when no volume option
+  is supplied.
+
 ## 1.3
 
 - Added `INSTALL.COM`, a native real-mode DOS installer and audio converter.

@@ -50,7 +50,8 @@ exist, answer `Y` at the prompt or use `INSTALL /Y`.
 
 The installer is a real-mode DOS program with no Python, Windows, protected-mode
 extender, or compiler dependency. Its complete conversion was tested using a
-DOSBox-X 386 CPU profile; physical 386 installation is awaiting confirmation.
+DOSBox-X 386 CPU profile, and release 1.3 was reported working on the physical
+AMD 386DX-40 target.
 
 ### From a modern computer
 
@@ -89,7 +90,7 @@ Listen for both tracker music and a digital effect, then start the game with:
 RUN_GUS.BAT
 ```
 
-## Music panning
+## Audio controls
 
 `RUN_GUS.BAT` selects 60% stereo width. The launcher accepts signed panning
 values from -100 to 100:
@@ -106,6 +107,23 @@ PRE2GUS -vp60     REM OCP-style spelling
 The GF1 provides 16 discrete pan positions, so adjacent percentages may map to
 the same hardware values. The option affects the four music voices, not SFX or
 the third-party intro.
+
+Music and SFX volume can be selected independently from 0 through 100:
+
+```dos
+PRE2GUS /M60 /S80     REM 60% music, 80% effects
+PRE2GUS -vm60 -vs80   REM OCP-style spelling
+```
+
+When omitted, `/M` and `/S` retain the earlier releases' exact GF1 master
+levels: 52/64 for music (displayed as 81%) and 55/64 for SFX (displayed as
+86%).
+
+The GF1 line input remains enabled during the game by default. `/LON` selects
+that behavior explicitly; `/LOFF` keeps it enabled for the intro, mutes it at
+the verified game handoff, and enables it again when PRE2GUS exits. This mixer
+control is write-only, so PRE2GUS cannot read and restore an unknown pre-launch
+mute state.
 
 ## Executable compatibility
 
@@ -148,10 +166,10 @@ Python, NASM, or another compiler.
   1 MB GUS MAX.
 - Version 1.2 panning modes, invalid-argument handling, protected-loader
   handoff, and the first game-requested GF1 track were checked in DOSBox-X.
-- Version 1.3's native installer completed under a DOSBox-X 386 profile and
-  generated all audio files byte-for-byte correctly.
-- Physical listening tests of the panning control and native installation are
-  still welcome.
+- Version 1.3 was reported working on the physical AMD 386DX-40/GUS MAX system;
+  its handoff-time line-input mute was also observed there.
+- Version 1.4's volume parsing, line-input modes, and GF1 self-test were checked
+  under a DOSBox-X 386 profile. Physical 1.4 confirmation is still welcome.
 
 See [docs/VALIDATION.md](docs/VALIDATION.md) for the precise verification scope.
 
