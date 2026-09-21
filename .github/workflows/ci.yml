@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Install NASM
+        run: sudo apt-get update && sudo apt-get install -y nasm
+      - name: Rebuild launcher
+        run: nasm -Wall -f bin -o /tmp/PRE2GUS.COM src/pre2gus.asm
+      - name: Rebuild native installer
+        run: nasm -Wall -f bin -o /tmp/INSTALL.COM tools/install_dos.asm
+      - name: Verify reproducible binaries
+        run: |
+          cmp /tmp/PRE2GUS.COM dist/PRE2GUS.COM
+          cmp /tmp/INSTALL.COM dist/INSTALL.COM
+      - name: Run unit tests
+        run: python3 -m unittest discover -s tests -v
+      - name: Audit repository contents
+        run: python3 tools/audit_repository.py .

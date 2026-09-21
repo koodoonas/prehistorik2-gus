@@ -1,0 +1,16 @@
+@ECHO OFF
+IF "%ULTRASND%"=="" GOTO NOGUS
+IF NOT EXIST PRE2.EXE GOTO NOGAME
+IF NOT EXIST PRE2GUS.COM GOTO NOLAUNCH
+PRE2GUS.COM /P60
+GOTO END
+:NOGUS
+ECHO ULTRASND is not set. Initialize the GUS and try again.
+GOTO END
+:NOGAME
+ECHO PRE2.EXE is not in the current directory.
+GOTO END
+:NOLAUNCH
+ECHO PRE2GUS.COM is not in the current directory.
+:END
+

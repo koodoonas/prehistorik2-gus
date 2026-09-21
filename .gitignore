@@ -1,0 +1,30 @@
+# Original game files and locally generated derivatives must not be committed.
+*.EXE
+*.exe
+*.TRK
+*.trk
+*.SQZ
+*.sqz
+*.MOD
+*.mod
+*.RAW
+*.raw
+*.ZIP
+*.zip
+*.RAR
+*.rar
+*.7Z
+*.7z
+*.COM
+*.com
+
+# The two redistributable binaries built from this repository.
+!dist/PRE2GUS.COM
+!dist/INSTALL.COM
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+build/
+converted/
+game/
