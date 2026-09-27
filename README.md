@@ -169,7 +169,8 @@ Python, NASM, or another compiler.
 - Version 1.3 was reported working on the physical AMD 386DX-40/GUS MAX system;
   its handoff-time line-input mute was also observed there.
 - Version 1.4's volume parsing, line-input modes, and GF1 self-test were checked
-  under a DOSBox-X 386 profile. Physical 1.4 confirmation is still welcome.
+  under a DOSBox-X 386 profile. It was also reported working successfully on a
+  physical 486/133 system with a GUS PnP.
 
 See [docs/VALIDATION.md](docs/VALIDATION.md) for the precise verification scope.
 
