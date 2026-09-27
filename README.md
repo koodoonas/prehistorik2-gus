@@ -174,9 +174,20 @@ Python, NASM, or another compiler.
 
 See [docs/VALIDATION.md](docs/VALIDATION.md) for the precise verification scope.
 
+## Other GUS Patches
+
+[Gravis Ultrasound Game Patches](https://github.com/koodoonas/gus-game-patches-and-fixes)
+
+## AI usage disclosure
+
+These patches have been heavily assisted by AI and, in some cases, developed almost entirely with its help.
+
+I remain ambivalent about AI and its human and environmental costs. But since it’s already here, I might as well use it for something fun until it consumes us all.
+
 ## Legal
 
 Prehistorik 2 and its data remain the property of their respective rights
 holders. This independent project is not affiliated with or endorsed by them.
 You must supply your own legally obtained game copy. Do not publish the source
 game files or the converted audio produced by the installer.
+
